@@ -1,0 +1,115 @@
+generator client {
+provider = "prisma-client-js"
+}
+
+datasource db {
+provider = "postgresql"
+url      = env("DATABASE_URL")
+}
+
+model User {
+id            String    @id @default(uuid())
+name          String
+email         String    @unique
+password_hash String
+created_at    DateTime  @default(now())
+
+companies     Company[]
+
+@@map("users")
+}
+
+model Company {
+id         String   @id @default(uuid())
+name       String
+owner_id   String
+created_at DateTime @default(now())
+
+owner      User     @relation(fields: [owner_id], references: [id])
+customers  Customer[]
+revenues   Revenue[]
+expenses   Expense[]
+projects   Project[]
+insights   Insight[]
+
+@@index([owner_id])
+@@map("companies")
+}
+
+model Customer {
+id         String   @id @default(uuid())
+company_id String
+name       String
+email      String?
+phone      String?
+created_at DateTime @default(now())
+
+company    Company  @relation(fields: [company_id], references: [id])
+revenues   Revenue[]
+projects   Project[]
+
+@@index([company_id])
+@@map("customers")
+}
+
+model Revenue {
+id          String   @id @default(uuid())
+company_id  String
+customer_id String?
+amount      Decimal  @db.Decimal(10,2)
+description String?
+date        DateTime
+created_at  DateTime @default(now())
+
+company     Company  @relation(fields: [company_id], references: [id])
+customer    Customer? @relation(fields: [customer_id], references: [id])
+
+@@index([company_id])
+@@index([date])
+@@map("revenues")
+}
+
+model Expense {
+id          String   @id @default(uuid())
+company_id  String
+amount      Decimal  @db.Decimal(10,2)
+category    String
+description String?
+date        DateTime
+created_at  DateTime @default(now())
+
+company     Company  @relation(fields: [company_id], references: [id])
+
+@@index([company_id])
+@@index([date])
+@@map("expenses")
+}
+
+model Project {
+id          String   @id @default(uuid())
+company_id  String
+customer_id String?
+name        String
+status      String
+value       Decimal  @db.Decimal(10,2)
+created_at  DateTime @default(now())
+
+company     Company  @relation(fields: [company_id], references: [id])
+customer    Customer? @relation(fields: [customer_id], references: [id])
+
+@@index([company_id])
+@@map("projects")
+}
+
+model Insight {
+id         String   @id @default(uuid())
+company_id String
+type       String
+message    String
+created_at DateTime @default(now())
+
+company    Company  @relation(fields: [company_id], references: [id])
+
+@@index([company_id])
+@@map("insights")
+}
