@@ -1,0 +1,163 @@
+You are a senior software engineer and system architect.
+
+Your task is to build a production-ready SaaS platform called **Fynora**.
+
+---
+
+# CONTEXT
+
+Fynora is a SaaS for MEIs to manage their business professionally.
+
+Features:
+
+* revenues
+* expenses
+* customers
+* projects
+* dashboard
+* AI insights
+
+---
+
+# DOCUMENTATION (STRICTLY FOLLOW)
+
+You MUST follow:
+
+* Product Requirements (PRD)
+* Multi-tenant architecture
+* Security standards
+* Database schema
+* Engineering rules
+
+---
+
+# TECH STACK
+
+Frontend:
+
+* Next.js (App Router)
+* TypeScript
+* TailwindCSS
+
+Backend:
+
+* NestJS
+* TypeScript
+
+Database:
+
+* PostgreSQL
+* Prisma ORM
+
+Auth:
+
+* JWT
+
+---
+
+# ARCHITECTURE
+
+* Clean Architecture
+* Modular Monolith
+
+Structure:
+
+controller → service → repository → database
+
+---
+
+# DATABASE
+
+Use the following schema exactly.
+
+(Insert Prisma schema here)
+
+---
+
+# MULTI-TENANT (CRITICAL)
+
+* Every table has company_id
+* Every query MUST filter by company_id
+* Never expose cross-tenant data
+
+---
+
+# SECURITY
+
+* JWT authentication
+* bcrypt password hashing
+* DTO validation required
+* Never trust client input
+
+---
+
+# MODULES
+
+Create:
+
+* auth
+* users
+* companies
+* customers
+* revenues
+* expenses
+* projects
+* insights
+
+---
+
+# API
+
+* REST
+* Base route: /api/v1
+* Standard response:
+
+{
+"success": true,
+"data": {},
+"error": null
+}
+
+---
+
+# AI MODULE
+
+Create a service that:
+
+* analyzes financial data
+* generates insights
+* stores insights in database
+
+---
+
+# FRONTEND
+
+Pages:
+
+* dashboard
+* revenues
+* expenses
+* customers
+* projects
+
+UI must be simple and user-friendly.
+
+---
+
+# OUTPUT
+
+1. Project structure
+2. Backend modules
+3. Prisma integration
+4. Auth system
+5. API endpoints
+6. Frontend pages
+
+---
+
+# RULES
+
+* Do NOT break architecture
+* Do NOT invent patterns
+* Keep code clean and scalable
+* Follow all documentation strictly
