@@ -4,11 +4,22 @@ Your task is to build a production-ready SaaS platform called **Fynora**.
 
 ---
 
+# CRITICAL INSTRUCTION
+
+Before writing any code:
+
+1. Read ALL documentation inside `/docs`
+2. Read `AGENTS.md`
+3. Follow them strictly
+4. Do NOT assume anything not defined
+
+---
+
 # CONTEXT
 
-Fynora is a SaaS for MEIs to manage their business professionally.
+Fynora is a SaaS for MEIs (individual entrepreneurs) to manage their business professionally.
 
-Features:
+Core features:
 
 * revenues
 * expenses
@@ -19,19 +30,21 @@ Features:
 
 ---
 
-# DOCUMENTATION (STRICTLY FOLLOW)
+# SOURCE OF TRUTH
 
-You MUST follow:
+You MUST follow (in priority order):
 
-* Product Requirements (PRD)
-* Multi-tenant architecture
-* Security standards
-* Database schema
-* Engineering rules
+1. `/docs/domain` (business rules)
+2. `/docs/product` (features & behavior)
+3. `/docs/system` (architecture)
+4. `/docs/engineering` (standards)
+5. `/docs/api` (API contract)
+
+If there is any conflict, follow this order strictly.
 
 ---
 
-# TECH STACK
+# TECH STACK (MANDATORY)
 
 Frontend:
 
@@ -55,45 +68,49 @@ Auth:
 
 ---
 
-# ARCHITECTURE
+# ARCHITECTURE (STRICT)
 
 * Clean Architecture
 * Modular Monolith
 
-Structure:
+Layer flow:
 
 controller → service → repository → database
 
+Rules:
+
+* Controllers MUST NOT contain business logic
+* Services contain business logic
+* Repositories handle database only
+
 ---
 
-# DATABASE
+# DATABASE (STRICT)
 
-Use the following schema exactly.
+Use Prisma schema from `/prisma/schema.prisma`.
 
-(Insert Prisma schema here)
+DO NOT modify schema unless explicitly instructed.
 
 ---
 
 # MULTI-TENANT (CRITICAL)
 
-* Every table has company_id
-* Every query MUST filter by company_id
-* Never expose cross-tenant data
+* Every entity MUST include `company_id`
+* Every query MUST filter by `company_id`
+* NEVER expose cross-tenant data
 
 ---
 
-# SECURITY
+# SECURITY (STRICT)
 
-* JWT authentication
-* bcrypt password hashing
+* JWT authentication required
+* bcrypt for password hashing
 * DTO validation required
 * Never trust client input
 
 ---
 
-# MODULES
-
-Create:
+# MODULES TO BUILD
 
 * auth
 * users
@@ -104,13 +121,23 @@ Create:
 * projects
 * insights
 
+Each module MUST follow:
+
+* controller
+* service
+* repository
+* dto
+* entity
+
 ---
 
-# API
+# API RULES
 
-* REST
-* Base route: /api/v1
-* Standard response:
+* REST API
+* Base route: `/api/v1`
+* Follow `/docs/api/api-contract.md`
+
+Standard response:
 
 {
 "success": true,
@@ -140,24 +167,33 @@ Pages:
 * customers
 * projects
 
-UI must be simple and user-friendly.
+Rules:
+
+* simple UI
+* clear language (non-technical)
+* follow `/docs/product/design-system.md`
 
 ---
 
-# OUTPUT
+# OUTPUT STRATEGY
 
-1. Project structure
-2. Backend modules
-3. Prisma integration
-4. Auth system
-5. API endpoints
-6. Frontend pages
+DO NOT build everything at once.
+
+Work in steps:
+
+1. Backend structure
+2. Database integration
+3. Auth module
+4. Core modules (revenues, expenses, etc)
+5. AI module
+6. Frontend
 
 ---
 
-# RULES
+# HARD RULES
 
-* Do NOT break architecture
 * Do NOT invent patterns
-* Keep code clean and scalable
-* Follow all documentation strictly
+* Do NOT break architecture
+* Do NOT ignore docs
+* Always follow `/docs` and `AGENTS.md`
+* Keep code clean, typed, and scalable
