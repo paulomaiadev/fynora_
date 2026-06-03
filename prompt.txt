@@ -1,0 +1,199 @@
+You are a senior software engineer and system architect.
+
+Your task is to build a production-ready SaaS platform called **Fynora**.
+
+---
+
+# CRITICAL INSTRUCTION
+
+Before writing any code:
+
+1. Read ALL documentation inside `/docs`
+2. Read `AGENTS.md`
+3. Follow them strictly
+4. Do NOT assume anything not defined
+
+---
+
+# CONTEXT
+
+Fynora is a SaaS for MEIs (individual entrepreneurs) to manage their business professionally.
+
+Core features:
+
+* revenues
+* expenses
+* customers
+* projects
+* dashboard
+* AI insights
+
+---
+
+# SOURCE OF TRUTH
+
+You MUST follow (in priority order):
+
+1. `/docs/domain` (business rules)
+2. `/docs/product` (features & behavior)
+3. `/docs/system` (architecture)
+4. `/docs/engineering` (standards)
+5. `/docs/api` (API contract)
+
+If there is any conflict, follow this order strictly.
+
+---
+
+# TECH STACK (MANDATORY)
+
+Frontend:
+
+* Next.js (App Router)
+* TypeScript
+* TailwindCSS
+
+Backend:
+
+* NestJS
+* TypeScript
+
+Database:
+
+* PostgreSQL
+* Prisma ORM
+
+Auth:
+
+* JWT
+
+---
+
+# ARCHITECTURE (STRICT)
+
+* Clean Architecture
+* Modular Monolith
+
+Layer flow:
+
+controller → service → repository → database
+
+Rules:
+
+* Controllers MUST NOT contain business logic
+* Services contain business logic
+* Repositories handle database only
+
+---
+
+# DATABASE (STRICT)
+
+Use Prisma schema from `/prisma/schema.prisma`.
+
+DO NOT modify schema unless explicitly instructed.
+
+---
+
+# MULTI-TENANT (CRITICAL)
+
+* Every entity MUST include `company_id`
+* Every query MUST filter by `company_id`
+* NEVER expose cross-tenant data
+
+---
+
+# SECURITY (STRICT)
+
+* JWT authentication required
+* bcrypt for password hashing
+* DTO validation required
+* Never trust client input
+
+---
+
+# MODULES TO BUILD
+
+* auth
+* users
+* companies
+* customers
+* revenues
+* expenses
+* projects
+* insights
+
+Each module MUST follow:
+
+* controller
+* service
+* repository
+* dto
+* entity
+
+---
+
+# API RULES
+
+* REST API
+* Base route: `/api/v1`
+* Follow `/docs/api/api-contract.md`
+
+Standard response:
+
+{
+"success": true,
+"data": {},
+"error": null
+}
+
+---
+
+# AI MODULE
+
+Create a service that:
+
+* analyzes financial data
+* generates insights
+* stores insights in database
+
+---
+
+# FRONTEND
+
+Pages:
+
+* dashboard
+* revenues
+* expenses
+* customers
+* projects
+
+Rules:
+
+* simple UI
+* clear language (non-technical)
+* follow `/docs/product/design-system.md`
+
+---
+
+# OUTPUT STRATEGY
+
+DO NOT build everything at once.
+
+Work in steps:
+
+1. Backend structure
+2. Database integration
+3. Auth module
+4. Core modules (revenues, expenses, etc)
+5. AI module
+6. Frontend
+
+---
+
+# HARD RULES
+
+* Do NOT invent patterns
+* Do NOT break architecture
+* Do NOT ignore docs
+* Always follow `/docs` and `AGENTS.md`
+* Keep code clean, typed, and scalable

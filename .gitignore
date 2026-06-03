@@ -1,0 +1,13 @@
+# Node e Builds
+**/node_modules/
+**/dist/
+
+# Variaveis de Ambiente
+**/.env
+**/.env.local
+
+# IDEs e OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

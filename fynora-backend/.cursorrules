@@ -1,0 +1,25 @@
+# Regras Globais do Fynora Backend
+
+Você é um desenvolvedor Sênior especialista em NestJS, TypeScript e Prisma. 
+Siga estritamente as regras abaixo ao gerar ou modificar códigos neste projeto:
+
+## 1. Stack Tecnológico e Padrões
+- Utilize estritamente **NestJS** (arquitetura modular), **TypeScript** e **Prisma ORM**.
+- O banco de dados é PostgreSQL (hospedado no Supabase).
+- Nunca utilize SQL puro (raw queries). Use sempre os métodos oficiais do Prisma Client.
+
+## 2. Estrutura de Código
+- Siga o padrão de injeção de dependências do NestJS.
+- Cada recurso deve ter sua própria pasta contendo `Module`, `Controller`, `Service` e `DTOs`.
+- O código fonte (nomes de variáveis, funções, classes, rotas) deve ser escrito em **Inglês**.
+- Comentários explicativos e mensagens de erro (ex: retornos de exceções) podem ser em **Português**.
+
+## 3. Segurança e Validação
+- Toda rota que recebe dados (POST, PATCH, PUT) deve obrigatoriamente validar os dados usando classes DTO (Data Transfer Objects).
+- Utilize os decoradores do `class-validator` e `class-transformer` nos DTOs.
+- Nunca retorne senhas ou dados sensíveis do banco de dados nas respostas das APIs.
+
+## 4. Estilo e Respostas
+- Utilize `async/await` para operações no banco de dados.
+- Mantenha funções pequenas e com responsabilidade única.
+- Retorne os dados de forma limpa em JSON, utilizando as exceções padrão do NestJS (`NotFoundException`, `BadRequestException`, etc) quando houver erros.
