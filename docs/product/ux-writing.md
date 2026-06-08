@@ -27,3 +27,15 @@
 * claro
 * profissional
 * acessível
+
+---
+
+## Mensagens de Validação de Campos
+
+### Senha
+
+* Mínimo: "A senha deve ter pelo menos 8 caracteres."
+* Máximo: "A senha deve ter no máximo 72 caracteres."
+* ⚠️ O limite de 72 caracteres é técnico (restrição do bcrypt) e DEVE ser
+  comunicado ao usuário no Frontend com esta mensagem exata, sem expor
+  detalhes de implementação.

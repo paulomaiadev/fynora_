@@ -24,3 +24,17 @@ company_id
 ## Objetivo
 
 Garantir segurança e isolamento entre empresas.
+
+---
+
+## Exceções e Casos Especiais
+
+### Acesso Administrativo
+
+Não existe acesso cross-tenant no MVP.
+
+Qualquer necessidade futura de suporte técnico ou administração de dados
+de múltiplas empresas DEVE seguir a especificação em
+`docs/engineering/security-advanced.md` (seção SuperAdmin / Suporte Técnico).
+
+**Regra:** a ausência desta especificação não autoriza implementações ad-hoc.

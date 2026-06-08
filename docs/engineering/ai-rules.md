@@ -25,9 +25,13 @@ Garantir que a IA mantenha consistência no código.
 
 ## Banco
 
-* usar Prisma
-* respeitar schema
-* usar migrations
+* usar Prisma ORM — nunca SQL puro
+* respeitar schema — não modificar sem instrução explícita
+* usar migrations para alterações de schema
+* **NUNCA injetar `PrismaService` diretamente em Services ou Repositories**
+* Todo acesso ao banco DEVE passar pelo `PrismaTransactionManager`
+* Operações com múltiplas escritas DEVEM usar `TransactionSession` para garantir atomicidade
+* Padrão de uso: `this.txManager.run(async (tx) => { ... })`
 
 ---
 

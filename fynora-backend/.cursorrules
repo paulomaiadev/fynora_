@@ -7,6 +7,25 @@ Siga estritamente as regras abaixo ao gerar ou modificar códigos neste projeto:
 - Utilize estritamente **NestJS** (arquitetura modular), **TypeScript** e **Prisma ORM**.
 - O banco de dados é PostgreSQL (hospedado no Supabase).
 - Nunca utilize SQL puro (raw queries). Use sempre os métodos oficiais do Prisma Client.
+- **Acesso ao Prisma é SEMPRE feito através do `PrismaTransactionManager`.**
+  Nunca injete `PrismaService` diretamente em Services ou Repositories.
+  Use `TransactionSession` para operações que envolvam múltiplas escritas
+  que devem ser atômicas.
+
+  Padrão obrigatório em Repositories:
+  ```typescript
+  // ✅ CORRETO
+  constructor(private readonly txManager: PrismaTransactionManager) {}
+
+  async create(data: CreateRevenueDto, companyId: string) {
+    return this.txManager.run(async (tx) => {
+      return tx.revenue.create({ data: { ...data, company_id: companyId } });
+    });
+  }
+
+  // ❌ PROIBIDO — acoplamento direto
+  constructor(private readonly prisma: PrismaService) {}
+  ```
 
 ## 2. Estrutura de Código
 - Siga o padrão de injeção de dependências do NestJS.
@@ -23,3 +42,9 @@ Siga estritamente as regras abaixo ao gerar ou modificar códigos neste projeto:
 - Utilize `async/await` para operações no banco de dados.
 - Mantenha funções pequenas e com responsabilidade única.
 - Retorne os dados de forma limpa em JSON, utilizando as exceções padrão do NestJS (`NotFoundException`, `BadRequestException`, etc) quando houver erros.
+- Erros do Prisma (ex: P2002, P2025) DEVEM ser capturados explicitamente
+  no Service com `try/catch`. Nunca propague uma `PrismaClientKnownRequestError`
+  diretamente. Converta-os para exceções NestJS tipadas
+  (`ConflictException`, `NotFoundException`, etc.) com mensagem em Português.
+- NUNCA retorne texto puro em erros. Toda resposta de erro deve seguir o
+  envelope `{ success: false, data: null, error: { code, message } }`.

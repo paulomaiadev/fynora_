@@ -81,6 +81,24 @@ HTTP: `500`
 
 ---
 
+### 6. Database Constraint Error
+
+Violação de restrições do banco de dados capturadas pelo ORM.
+
+Exemplos:
+- registro duplicado (Prisma P2002 — unique constraint)
+- registro referenciado não encontrado (Prisma P2025)
+
+HTTP: `400` para P2002 (conflito de dados de entrada)
+HTTP: `404` para P2025 (recurso não encontrado)
+
+**Regra:** erros do Prisma NUNCA devem ser propagados como texto puro.
+Todo erro de ORM deve ser capturado no Service ou em um filtro global
+e convertido para o padrão `{ success, data, error }` antes de atingir
+o Controller.
+
+---
+
 ## 📦 Estrutura Padrão
 
 ```json
@@ -92,3 +110,13 @@ HTTP: `500`
     "message": "Mensagem clara e objetiva"
   }
 }
+```
+
+---
+
+## 🚫 Não permitido
+
+❌ propagar `PrismaClientKnownRequestError` diretamente
+❌ retornar texto puro em erros
+❌ expor stack trace ou mensagens internas do banco
+❌ ausência do envelope `{ success, data, error }`
