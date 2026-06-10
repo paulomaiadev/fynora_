@@ -48,3 +48,10 @@ Siga estritamente as regras abaixo ao gerar ou modificar códigos neste projeto:
   (`ConflictException`, `NotFoundException`, etc.) com mensagem em Português.
 - NUNCA retorne texto puro em erros. Toda resposta de erro deve seguir o
   envelope `{ success: false, data: null, error: { code, message } }`.
+
+
+
+### 🛑 REGRAS DE COMPLIANCE E SEGURANÇA (AUDITORIA V1)
+- Antes de gerar qualquer código de backend, banco de dados ou rota, verifique e aplique as correções documentadas em `docs/audit/report-v1.md`.
+- Prevenir agressivamente o vazamento de dados Cross-Tenant [Item S-01]. Toda query por ID deve incluir o ID do Tenant.
+- Valores monetários devem seguir estritamente o padrão DECIMAL [Item B-02].
