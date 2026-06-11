@@ -1,8 +1,22 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { CurrentCompanyId } from '../auth/decorators/current-company-id.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { CompanyService } from './company.service';
 import { CompanyOnboardingDto } from './dto/company-onboarding.dto';
+import { CompanyResponseDto } from './dto/company-response.dto';
 import { OnboardingResponseDto } from './dto/onboarding-response.dto';
 
 @ApiTags('company')
@@ -37,19 +51,25 @@ export class CompanyController {
     return this.companyService.onboarding(dto);
   }
 
-  // Fase 2.1 — rotas autenticadas (JWT + isolamento por company_id)
-  // @Get(':id')
-  // @ApiBearerAuth('access-token')
-  // async findById(@Param('id') id: string): Promise<CompanyResponseDto> { ... }
-  //
-  // @Get('me')
-  // @ApiBearerAuth('access-token')
-  // async findMe(): Promise<CompanyResponseDto> { ... }
-  //
-  // @Patch(':id')
-  // @ApiBearerAuth('access-token')
-  // async update(
-  //   @Param('id') id: string,
-  //   @Body() dto: UpdateCompanyDto,
-  // ): Promise<CompanyResponseDto> { ... }
+  @Get('me')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Perfil da empresa autenticada',
+    description:
+      'Retorna os dados do tenant vinculado ao companyId do JWT. Sem parâmetro :id na URL — proteção anti-IDOR.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Perfil da empresa retornado com sucesso.',
+    type: CompanyResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Empresa não encontrada.',
+  })
+  async getProfile(
+    @CurrentCompanyId() companyId: string,
+  ): Promise<CompanyResponseDto> {
+    return this.companyService.getProfile(companyId);
+  }
 }

@@ -2,17 +2,21 @@ import {
   ConflictException,
   Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { isPrismaUniqueConstraintOnFields } from '../common/utils/prisma-error.util';
 import { stripDocument } from '../common/utils/document.util';
 import { sanitizeText } from '../common/utils/sanitize-text.util';
+import { PrismaService } from '../prisma/prisma.service';
 import { PrismaTransactionManager } from '../prisma/prisma-transaction.manager';
 import { UserRepository } from '../user/user.repository';
 import { ONBOARDING_CONFLICT_MESSAGE } from './constants/onboarding.constants';
 import { CompanyRepository } from './company.repository';
 import type { CompanyOnboardingDto } from './dto/company-onboarding.dto';
+import { CompanyResponseDto } from './dto/company-response.dto';
 import { OnboardingResponseDto } from './dto/onboarding-response.dto';
+import { CompanyEntity } from './entity/company.entity';
 import { OnboardingResultEntity } from './entity/onboarding-result.entity';
 
 const BCRYPT_ROUNDS = 12;
@@ -25,6 +29,7 @@ export class CompanyService {
     private readonly transactionManager: PrismaTransactionManager,
     private readonly companyRepository: CompanyRepository,
     private readonly userRepository: UserRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   async onboarding(dto: CompanyOnboardingDto): Promise<OnboardingResponseDto> {
@@ -98,7 +103,15 @@ export class CompanyService {
     }
   }
 
-  // Fase 2.1 — endpoints protegidos por JWT com company_id
-  // async findById(id: string, tenantCompanyId: string): Promise<CompanyResponseDto> { ... }
-  // async update(id: string, tenantCompanyId: string, dto: UpdateCompanyDto): Promise<CompanyResponseDto> { ... }
+  async getProfile(companyId: string): Promise<CompanyResponseDto> {
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+    });
+
+    if (!company) {
+      throw new NotFoundException('Empresa não encontrada.');
+    }
+
+    return CompanyResponseDto.fromEntity(CompanyEntity.fromPrisma(company));
+  }
 }
