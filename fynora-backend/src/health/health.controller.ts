@@ -7,6 +7,7 @@ import {
   MemoryHealthIndicator,
   PrismaHealthIndicator,
 } from '@nestjs/terminus';
+import { Public } from '../auth/decorators/public.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 
 const MEMORY_HEAP_THRESHOLD_BYTES = 300 * 1024 * 1024;
@@ -22,6 +23,7 @@ export class HealthController {
     private readonly prisma: PrismaService,
   ) {}
 
+  @Public()
   @Get()
   @HealthCheck()
   @ApiOperation({

@@ -1,5 +1,6 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator';
 import { CompanyService } from './company.service';
 import { CompanyOnboardingDto } from './dto/company-onboarding.dto';
 import { OnboardingResponseDto } from './dto/onboarding-response.dto';
@@ -9,6 +10,7 @@ import { OnboardingResponseDto } from './dto/onboarding-response.dto';
 export class CompanyController {
   constructor(private readonly companyService: CompanyService) {}
 
+  @Public()
   @Post('onboarding')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
