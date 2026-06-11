@@ -44,6 +44,35 @@ export class UserRepository {
     return user ? UserEntity.fromPrisma(user) : null;
   }
 
+  async findByIdAndCompany(
+    id: string,
+    companyId: string,
+    session?: TransactionSession,
+  ): Promise<UserEntity | null> {
+    const client = this.resolveClient(session);
+    const user = await client.user.findFirst({
+      where: {
+        id,
+        company_id: companyId,
+      },
+    });
+
+    return user ? UserEntity.fromPrisma(user) : null;
+  }
+
+  async findAllByCompany(
+    companyId: string,
+    session?: TransactionSession,
+  ): Promise<UserEntity[]> {
+    const client = this.resolveClient(session);
+    const users = await client.user.findMany({
+      where: { company_id: companyId },
+      orderBy: { name: 'asc' },
+    });
+
+    return users.map((user) => UserEntity.fromPrisma(user));
+  }
+
   private resolveClient(
     session?: TransactionSession,
   ): PrismaTransactionClient | PrismaService {

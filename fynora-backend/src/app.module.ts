@@ -11,6 +11,7 @@ import { validateEnv } from './config/env.validation';
 import { CompanyModule } from './company/company.module';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { PrismaModule } from './prisma/prisma.module';
     PrismaModule,
     HealthModule,
     CompanyModule,
+    UserModule,
     AuthModule,
   ],
   controllers: [AppController],
