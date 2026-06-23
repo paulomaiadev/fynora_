@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
@@ -11,6 +11,7 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @HttpCode(HttpStatus.OK) // <-- Adicionado para retornar 200 em vez de 201
   @ApiOperation({ summary: 'Autenticar usuário e obter JWT (público)' })
   async login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
