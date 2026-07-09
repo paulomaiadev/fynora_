@@ -1,4 +1,8 @@
-import { RequestMethod, ValidationPipe, type INestApplication } from '@nestjs/common';
+import {
+  RequestMethod,
+  ValidationPipe,
+  type INestApplication,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost } from '@nestjs/core';
 import helmet from 'helmet';
@@ -25,9 +29,7 @@ export function configureApp(app: INestApplication): void {
     }),
   );
 
-  app.useGlobalFilters(
-    new PrismaClientExceptionFilter(httpAdapterHost),
-  );
+  app.useGlobalFilters(new PrismaClientExceptionFilter(httpAdapterHost));
 
   app.setGlobalPrefix('api/v1', {
     exclude: [

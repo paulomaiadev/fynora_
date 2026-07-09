@@ -14,7 +14,8 @@ export class CreateCompanyDto {
 
   @ApiProperty({
     example: '12345678000199',
-    description: 'CPF (11 dígitos) ou CNPJ (14 dígitos), apenas números após normalização',
+    description:
+      'CPF (11 dígitos) ou CNPJ (14 dígitos), apenas números após normalização',
   })
   @StripDocument()
   @IsCpfOrCnpj()

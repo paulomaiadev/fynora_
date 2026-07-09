@@ -33,8 +33,7 @@ export class HealthController {
   })
   check() {
     return this.health.check([
-      () =>
-        this.memory.checkHeap('memory_heap', MEMORY_HEAP_THRESHOLD_BYTES),
+      () => this.memory.checkHeap('memory_heap', MEMORY_HEAP_THRESHOLD_BYTES),
       () => this.prismaHealth.pingCheck('database', this.prisma),
     ]);
   }

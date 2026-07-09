@@ -31,9 +31,7 @@ export function isValidCpf(value: string): boolean {
   const firstDigit = calculateCpfCheckDigit(cpf, 10);
   const secondDigit = calculateCpfCheckDigit(cpf, 11);
 
-  return (
-    firstDigit === Number(cpf[9]) && secondDigit === Number(cpf[10])
-  );
+  return firstDigit === Number(cpf[9]) && secondDigit === Number(cpf[10]);
 }
 
 function calculateCnpjCheckDigit(digits: string, weights: number[]): number {
@@ -60,9 +58,7 @@ export function isValidCnpj(value: string): boolean {
   const firstDigit = calculateCnpjCheckDigit(cnpj, firstWeights);
   const secondDigit = calculateCnpjCheckDigit(cnpj, secondWeights);
 
-  return (
-    firstDigit === Number(cnpj[12]) && secondDigit === Number(cnpj[13])
-  );
+  return firstDigit === Number(cnpj[12]) && secondDigit === Number(cnpj[13]);
 }
 
 export function isValidCpfOrCnpj(value: string): boolean {

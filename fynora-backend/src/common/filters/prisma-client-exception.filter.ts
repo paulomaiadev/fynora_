@@ -23,9 +23,7 @@ const PRISMA_ERROR_MESSAGE: Record<PrismaErrorCode, string> = {
   P2025: 'Registro não encontrado.',
 };
 
-function isMappedPrismaErrorCode(
-  code: string,
-): code is PrismaErrorCode {
+function isMappedPrismaErrorCode(code: string): code is PrismaErrorCode {
   return Object.prototype.hasOwnProperty.call(PRISMA_ERROR_STATUS, code);
 }
 

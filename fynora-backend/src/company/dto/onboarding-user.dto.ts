@@ -10,8 +10,7 @@ import {
 } from 'class-validator';
 import { SanitizeText } from '../../common/decorators/sanitize-text.decorator';
 
-const PASSWORD_PATTERN =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,72}$/;
+const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,72}$/;
 
 const PASSWORD_VALIDATION_MESSAGE =
   'A senha deve conter no mínimo uma letra maiúscula, uma minúscula, um número e um caractere especial';

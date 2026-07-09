@@ -6,17 +6,29 @@ datasource db {
   provider = "postgresql"
 }
 
-model Company {
-  id        String   @id @default(uuid())
-  name      String
-  document  String?  @unique // CPF ou CNPJ do MEI
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// --- ENUMS ---
+enum DocumentType {
+  CPF
+  CNPJ
+}
 
-  users     User[]
-  revenues  Revenue[]
-  expenses  Expense[]
-  insights  Insight[]
+enum TransactionType {
+  INFLOW   // Substitui a tabela Revenue
+  OUTFLOW  // Substitui a tabela Expense
+}
+
+// --- MODELS ---
+model Company {
+  id           String        @id @default(uuid())
+  name         String
+  document     String?       @unique
+  documentType DocumentType? 
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  users        User[]
+  transactions Transaction[] // Tabela unificada
+  insights     Insight[]     // Mantido! Excelente ideia para o futuro.
 }
 
 model User {
@@ -28,42 +40,32 @@ model User {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  company    Company  @relation(fields: [company_id], references: [id])
+  company    Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
 }
 
-model Revenue {
-  id          String   @id @default(uuid())
+model Transaction {
+  id          String          @id @default(uuid())
   company_id  String
   description String
-  amount      Decimal  @db.Decimal(12, 2)
-  date        DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  company     Company  @relation(fields: [company_id], references: [id])
-}
-
-model Expense {
-  id          String   @id @default(uuid())
-  company_id  String
-  description String
-  amount      Decimal  @db.Decimal(12, 2)
+  amount      Decimal         @db.Decimal(12, 2)
+  type        TransactionType // Define se é INFLOW ou OUTFLOW
+  isBusiness  Boolean         @default(true) // A chave para o Índice de Confusão Patrimonial
   category    String?
   date        DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
-  company     Company  @relation(fields: [company_id], references: [id])
+  company     Company         @relation(fields: [company_id], references: [id], onDelete: Cascade)
 }
 
 model Insight {
-  id          String   @id @default(uuid())
-  company_id  String
-  title       String
-  content     String
-  type        String   // Ex: 'warning', 'tip', 'prediction'
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(uuid())
+  company_id String
+  title      String
+  content    String
+  type       String   // Ex: 'warning', 'tip', 'prediction'
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  company     Company  @relation(fields: [company_id], references: [id])
+  company    Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
 }

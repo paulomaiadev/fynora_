@@ -5,7 +5,9 @@ import {
 } from 'class-validator';
 import { isValidCpfOrCnpj } from '../utils/document.util';
 
-export function IsCpfOrCnpj(validationOptions?: ValidationOptions): PropertyDecorator {
+export function IsCpfOrCnpj(
+  validationOptions?: ValidationOptions,
+): PropertyDecorator {
   return function (object: object, propertyName: string | symbol) {
     registerDecorator({
       name: 'isCpfOrCnpj',

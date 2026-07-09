@@ -93,9 +93,7 @@ export class CompanyService {
         throw error;
       }
 
-      if (
-        isPrismaUniqueConstraintOnFields(error, ['document', 'email'])
-      ) {
+      if (isPrismaUniqueConstraintOnFields(error, ['document', 'email'])) {
         throw new ConflictException(ONBOARDING_CONFLICT_MESSAGE);
       }
 

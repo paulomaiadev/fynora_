@@ -32,9 +32,7 @@ const TENANT_B = {
   },
 };
 
-async function cleanUserAndCompanyTables(
-  prisma: PrismaService,
-): Promise<void> {
+async function cleanUserAndCompanyTables(prisma: PrismaService): Promise<void> {
   await prisma.user.deleteMany();
   await prisma.company.deleteMany();
 }
