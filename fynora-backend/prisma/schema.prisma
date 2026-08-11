@@ -1,20 +1,21 @@
-datasource db {
-  provider = "postgresql"
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
 /// @model Company
-/// Centraliza o conceito de Tenant. Toda a estrutura do ecossistema orbita aqui.
+/// Centraliza o Tenant da empresa (MEI).
 model Company {
-  id           String        @id @default(uuid())
-  name         String
-  document     String        @unique // 🌟 Campo restaurado (CNPJ/CPF único)
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
-  
+  id        String   @id @default(uuid())
+  name      String
+  document  String   @unique // CPF (11 dígitos) ou CNPJ (14 dígitos)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   // Relacionamentos
   users        User[]
   customers    Customer[]
@@ -26,35 +27,34 @@ model Company {
 }
 
 /// @model User
-/// Gerenciamento de credenciais. Proteção estrita baseada nas restrições do bcrypt.
+/// Credenciais e perfil do usuário.
 model User {
   id        String   @id @default(uuid())
-  email     String   @unique // Validação @IsEmail e max 255 no DTO
-  name      String   // 🌟 Campo restaurado (Nome de exibição do usuário)
-  password  String   // Armazena o hash criptografado. Suporta o limite máximo de 72 caracteres
+  name      String
+  email     String   @unique
+  password  String   // Hash criptografado (bcrypt)
   companyId String   @map("company_id")
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@index([companyId]) // Índice essencial para a velocidade de autenticação/contexto
+  @@index([companyId])
   @@map("users")
 }
 
 /// @model Customer
-/// Cadastro unificado de clientes do MEI.
+/// Cadastro de clientes do MEI.
 model Customer {
-  id           String        @id @default(uuid())
-  name         String        // Campo obrigatório
-  email        String?       // Opcional
-  phone        String?       // Opcional
-  companyId    String        @map("company_id")
-  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
-  deletedAt    DateTime?     @map("deleted_at") // Mecanismo de Soft Delete para proteção de histórico
+  id        String    @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  companyId String    @map("company_id")
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at") // Soft delete
 
-  // Relacionamentos
   transactions Transaction[]
   projects     Project[]
 
@@ -63,68 +63,68 @@ model Customer {
 }
 
 enum TransactionType {
-  IN   // Entrada / Faturamento
-  OUT  // Saída / Despesa
+  IN  // Receita / Entrada de caixa
+  OUT // Despesa / Saída de caixa
 }
 
 /// @model Transaction
-/// [SINGLE LEDGER] Centralização contábil de todas as movimentações financeiras.
+/// [SINGLE LEDGER] Registro unificado de movimentações financeiras.
 model Transaction {
   id          String          @id @default(uuid())
-  type        TransactionType // Define a natureza matemática da operação (IN ou OUT)
-  amount      Decimal         @db.Decimal(12, 2) // Suporta precisão estrita de 2 casas decimais em BRL, sempre > 0
-  description String?
-  date        DateTime        // Data de competência da movimentação (Obrigatória)
-  category    String?         // Categoria da transação. Obrigatória via Service se type == OUT
-  isBusiness  Boolean         @default(false) // 🌟 Campo restaurado (Diferencia gastos pessoais e corporativos)
+  type        TransactionType // Natureza matemática (IN / OUT)
+  amount      Decimal         @db.Decimal(12, 2)
+  description String
+  date        DateTime        // Data de competência
+  category    String?
+  isBusiness  Boolean         @default(true) // true = Gasto Empresa (PJ) | false = Gasto Pessoal (PF)
   companyId   String          @map("company_id")
   company     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  customerId  String?         @map("customer_id") // Opcional, vincula receita a um cliente
+  customerId  String?         @map("customer_id")
   customer    Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
   createdAt   DateTime        @default(now()) @map("created_at")
   updatedAt   DateTime        @updatedAt @map("updated_at")
-  deletedAt   DateTime?       @map("deleted_at") // Soft Delete obrigatório para fins fiscais e contábeis
+  deletedAt   DateTime?       @map("deleted_at") // Soft delete fiscal
 
-  @@index([companyId]) // Garante o isolamento básico do tenant
-  @@index([companyId, date, type]) // Índice composto de alta performance para renderizar o Dashboard instantaneamente
+  @@index([companyId])
+  @@index([companyId, date, type]) // Índice composto para performance do Dashboard
   @@map("transactions")
 }
 
 enum ProjectStatus {
-  PENDING
+  PLANNED
   IN_PROGRESS
   COMPLETED
+  CANCELLED
 }
 
 /// @model Project
-/// Projetos fechados pelo MEI para prestação de serviços.
+/// Projetos/Serviços contratados por clientes.
 model Project {
   id         String        @id @default(uuid())
   name       String
-  status     ProjectStatus @default(PENDING) // Máquina de estados controlada via Service
-  value      Decimal       @db.Decimal(12, 2) @default(0.00) // Valor do projeto (deve ser >= 0)
+  status     ProjectStatus @default(PLANNED)
   companyId  String        @map("company_id")
   company    Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   customerId String?       @map("customer_id")
   customer   Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
   createdAt  DateTime      @default(now()) @map("created_at")
   updatedAt  DateTime      @updatedAt @map("updated_at")
-  deletedAt  DateTime?     @map("deleted_at")
 
   @@index([companyId])
   @@map("projects")
 }
 
 /// @model Insight
-/// Registro dos relatórios de risco e sacadas geradas pelo motor de IA.
+/// Recomendações e alertas gerados pelo motor de IA.
 model Insight {
   id        String   @id @default(uuid())
-  type      String   // Categoria do insight (ex: 'alert', 'risk', 'tip')
-  message   String   // Texto amigável e direto escrito pela IA
-  context   Json     // Metadados flexíveis de apoio ao insight (ex: { diffPercentage: 15.5 })
+  type      String   // Ex: 'warning', 'tip', 'prediction'
+  title     String
+  content   String
   companyId String   @map("company_id")
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([companyId])
   @@map("insights")
