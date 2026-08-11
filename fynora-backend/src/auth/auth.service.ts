@@ -19,7 +19,7 @@ export class AuthService {
         id: true,
         email: true,
         password: true,
-        company_id: true,
+        companyId: true,
       },
     });
 
@@ -36,7 +36,7 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
-      companyId: user.company_id,
+      companyId: user.companyId,
     };
 
     const token = await this.jwtService.signAsync(payload);

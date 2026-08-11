@@ -9,9 +9,6 @@ export class OnboardingUserResponseDto {
   company_id: string;
 
   @ApiProperty()
-  name: string;
-
-  @ApiProperty()
   email: string;
 
   @ApiProperty()
@@ -23,8 +20,7 @@ export class OnboardingUserResponseDto {
   static fromEntity(entity: UserEntity): OnboardingUserResponseDto {
     return {
       id: entity.id,
-      company_id: entity.company_id,
-      name: entity.name,
+      company_id: entity.companyId,
       email: entity.email,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,

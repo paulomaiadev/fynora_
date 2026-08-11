@@ -6,9 +6,6 @@ export class UserResponseDto {
   id: string;
 
   @ApiProperty()
-  name: string;
-
-  @ApiProperty()
   email: string;
 
   @ApiProperty()
@@ -20,7 +17,6 @@ export class UserResponseDto {
   static fromEntity(entity: UserEntity): UserResponseDto {
     return {
       id: entity.id,
-      name: entity.name,
       email: entity.email,
       createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,

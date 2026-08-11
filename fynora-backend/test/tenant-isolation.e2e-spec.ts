@@ -11,10 +11,8 @@ const TEST_PASSWORD = 'SenhaForte@2026';
 const TENANT_A = {
   company: {
     name: 'Empresa A E2E',
-    document: '52998224725',
   },
   user: {
-    name: 'Usuario A',
     email: 'tenant-a-e2e@test.com',
     password: TEST_PASSWORD,
   },
@@ -23,10 +21,8 @@ const TENANT_A = {
 const TENANT_B = {
   company: {
     name: 'Empresa B E2E',
-    document: '11222333000181',
   },
   user: {
-    name: 'Usuario B',
     email: 'tenant-b-e2e@test.com',
     password: TEST_PASSWORD,
   },
@@ -123,7 +119,6 @@ describe('Tenant isolation (e2e)', () => {
       expect(response.body).toMatchObject({
         id: userAId,
         email: TENANT_A.user.email,
-        name: TENANT_A.user.name,
       });
       expect(response.body).not.toHaveProperty('password');
     });

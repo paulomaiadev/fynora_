@@ -5,8 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UserEntity } from './entity/user.entity';
 
 export type CreateUserData = {
-  company_id: string;
-  name: string;
+  companyId: string;
   email: string;
   password: string;
 };
@@ -22,8 +21,7 @@ export class UserRepository {
     const client = this.resolveClient(session);
     const user = await client.user.create({
       data: {
-        company_id: data.company_id,
-        name: data.name,
+        companyId: data.companyId,
         email: data.email,
         password: data.password,
       },
@@ -53,7 +51,7 @@ export class UserRepository {
     const user = await client.user.findFirst({
       where: {
         id,
-        company_id: companyId,
+        companyId,
       },
     });
 
@@ -66,8 +64,8 @@ export class UserRepository {
   ): Promise<UserEntity[]> {
     const client = this.resolveClient(session);
     const users = await client.user.findMany({
-      where: { company_id: companyId },
-      orderBy: { name: 'asc' },
+      where: { companyId },
+      orderBy: { email: 'asc' },
     });
 
     return users.map((user) => UserEntity.fromPrisma(user));

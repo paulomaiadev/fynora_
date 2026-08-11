@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { isPrismaUniqueConstraintOnFields } from '../common/utils/prisma-error.util';
-import { stripDocument } from '../common/utils/document.util';
 import { sanitizeText } from '../common/utils/sanitize-text.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaTransactionManager } from '../prisma/prisma-transaction.manager';
@@ -34,22 +33,11 @@ export class CompanyService {
 
   async onboarding(dto: CompanyOnboardingDto): Promise<OnboardingResponseDto> {
     const companyName = sanitizeText(dto.company.name);
-    const document = stripDocument(dto.company.document);
-    const userName = sanitizeText(dto.user.name);
     const email = dto.user.email.trim().toLowerCase();
 
     try {
       const result = await this.transactionManager.runInTransaction(
         async (session) => {
-          const existingCompany = await this.companyRepository.findByDocument(
-            document,
-            session,
-          );
-
-          if (existingCompany) {
-            throw new ConflictException(ONBOARDING_CONFLICT_MESSAGE);
-          }
-
           const existingUser = await this.userRepository.findByEmail(
             email,
             session,
@@ -65,14 +53,13 @@ export class CompanyService {
           );
 
           const company = await this.companyRepository.create(
-            { name: companyName, document },
+            { name: companyName },
             session,
           );
 
           const user = await this.userRepository.create(
             {
-              company_id: company.id,
-              name: userName,
+              companyId: company.id,
               email,
               password: passwordHash,
             },
@@ -93,7 +80,7 @@ export class CompanyService {
         throw error;
       }
 
-      if (isPrismaUniqueConstraintOnFields(error, ['document', 'email'])) {
+      if (isPrismaUniqueConstraintOnFields(error, ['email'])) {
         throw new ConflictException(ONBOARDING_CONFLICT_MESSAGE);
       }
 

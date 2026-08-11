@@ -1,6 +1,7 @@
 import { ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { Test, TestingModule } from '@nestjs/testing';
+import { PrismaService } from '../prisma/prisma.service';
 import { PrismaTransactionManager } from '../prisma/prisma-transaction.manager';
 import { UserRepository } from '../user/user.repository';
 import { ONBOARDING_CONFLICT_MESSAGE } from './constants/onboarding.constants';
@@ -19,7 +20,6 @@ describe('CompanyService', () => {
 
   const companyRepositoryMock = {
     create: jest.fn(),
-    findByDocument: jest.fn(),
   };
 
   const userRepositoryMock = {
@@ -27,13 +27,17 @@ describe('CompanyService', () => {
     findByEmail: jest.fn(),
   };
 
+  const prismaMock = {
+    company: {
+      findUnique: jest.fn(),
+    },
+  };
+
   const onboardingDto: CompanyOnboardingDto = {
     company: {
       name: 'Empresa Teste',
-      document: '11222333000181',
     },
     user: {
-      name: 'Admin Teste',
       email: 'admin@teste.com',
       password: 'SenhaForte@2026',
     },
@@ -51,6 +55,7 @@ describe('CompanyService', () => {
         },
         { provide: CompanyRepository, useValue: companyRepositoryMock },
         { provide: UserRepository, useValue: userRepositoryMock },
+        { provide: PrismaService, useValue: prismaMock },
       ],
     }).compile();
 
@@ -65,17 +70,15 @@ describe('CompanyService', () => {
     const company = new CompanyEntity({
       id: 'company-1',
       name: 'Empresa Teste',
-      document: '11222333000181',
       createdAt: new Date(),
       updatedAt: new Date(),
     });
 
     const user = new UserEntity({
       id: 'user-1',
-      company_id: 'company-1',
+      companyId: 'company-1',
       email: 'admin@teste.com',
       password: 'hashed',
-      name: 'Admin Teste',
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -83,7 +86,6 @@ describe('CompanyService', () => {
     transactionManagerMock.runInTransaction.mockImplementation(
       async (handler: (session: unknown) => Promise<unknown>) => handler({}),
     );
-    companyRepositoryMock.findByDocument.mockResolvedValue(null);
     userRepositoryMock.findByEmail.mockResolvedValue(null);
     companyRepositoryMock.create.mockResolvedValue(company);
     userRepositoryMock.create.mockResolvedValue(user);
@@ -94,20 +96,21 @@ describe('CompanyService', () => {
     expect(result.user.email).toBe('admin@teste.com');
     expect(transactionManagerMock.runInTransaction).toHaveBeenCalledTimes(1);
     expect(companyRepositoryMock.create).toHaveBeenCalledWith(
-      expect.objectContaining({ document: '11222333000181' }),
+      expect.objectContaining({ name: 'Empresa Teste' }),
       expect.anything(),
     );
   });
 
-  it('should reject duplicate document before transaction write', async () => {
+  it('should reject duplicate email before transaction write', async () => {
     transactionManagerMock.runInTransaction.mockImplementation(
       async (handler: (session: unknown) => Promise<unknown>) => handler({}),
     );
-    companyRepositoryMock.findByDocument.mockResolvedValue(
-      new CompanyEntity({
+    userRepositoryMock.findByEmail.mockResolvedValue(
+      new UserEntity({
         id: 'existing',
-        name: 'Existente',
-        document: '11222333000181',
+        companyId: 'company-1',
+        email: 'admin@teste.com',
+        password: 'hashed',
         createdAt: new Date(),
         updatedAt: new Date(),
       }),
@@ -118,13 +121,13 @@ describe('CompanyService', () => {
     });
   });
 
-  it('should map Prisma P2002 on document to business conflict', async () => {
+  it('should map Prisma P2002 on email to business conflict', async () => {
     const prismaError = new Prisma.PrismaClientKnownRequestError(
       'Unique constraint failed',
       {
         code: 'P2002',
         clientVersion: '7.8.0',
-        meta: { target: ['document'] },
+        meta: { target: ['email'] },
       },
     );
 

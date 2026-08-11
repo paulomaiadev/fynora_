@@ -1,0 +1,768 @@
+diff --git a/fynora-backend/prisma/schema.prisma b/fynora-backend/prisma/schema.prisma
+index 8d3c8e5..ee5c96b 100644
+--- a/fynora-backend/prisma/schema.prisma
++++ b/fynora-backend/prisma/schema.prisma
+@@ -7,14 +7,15 @@ generator client {
+ }
+ 
+ /// @model Company
+-/// Centraliza o conceito de Tenant. Toda a estrutura do ecossistema orbita aqui[cite: 14].
++/// Centraliza o conceito de Tenant. Toda a estrutura do ecossistema orbita aqui.
+ model Company {
+   id           String        @id @default(uuid())
+   name         String
++  document     String        @unique // 🌟 Campo restaurado (CNPJ/CPF único)
+   createdAt    DateTime      @default(now()) @map("created_at")
+   updatedAt    DateTime      @updatedAt @map("updated_at")
+   
+-  // Relacionamentos[cite: 9]
++  // Relacionamentos
+   users        User[]
+   customers    Customer[]
+   transactions Transaction[]
+@@ -25,22 +26,23 @@ model Company {
+ }
+ 
+ /// @model User
+-/// Gerenciamento de credenciais. Proteção estrita baseada nas restrições do bcrypt[cite: 8, 12].
++/// Gerenciamento de credenciais. Proteção estrita baseada nas restrições do bcrypt.
+ model User {
+   id        String   @id @default(uuid())
+   email     String   @unique // Validação @IsEmail e max 255 no DTO
+-  password  String   // Armazena o hash criptografado. Suporta o limite máximo de 72 caracteres[cite: 8, 12]
++  name      String   // 🌟 Campo restaurado (Nome de exibição do usuário)
++  password  String   // Armazena o hash criptografado. Suporta o limite máximo de 72 caracteres
+   companyId String   @map("company_id")
+   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+   createdAt DateTime @default(now()) @map("created_at")
+   updatedAt DateTime @updatedAt @map("updated_at")
+ 
+-  @@index([companyId]) // Índice essencial para a velocidade de autenticação/contexto[cite: 9]
++  @@index([companyId]) // Índice essencial para a velocidade de autenticação/contexto
+   @@map("users")
+ }
+ 
+ /// @model Customer
+-/// Cadastro unificado de clientes do MEI[cite: 10].
++/// Cadastro unificado de clientes do MEI.
+ model Customer {
+   id           String        @id @default(uuid())
+   name         String        // Campo obrigatório
+@@ -52,7 +54,7 @@ model Customer {
+   updatedAt    DateTime      @updatedAt @map("updated_at")
+   deletedAt    DateTime?     @map("deleted_at") // Mecanismo de Soft Delete para proteção de histórico
+ 
+-  // Relacionamentos[cite: 9]
++  // Relacionamentos
+   transactions Transaction[]
+   projects     Project[]
+ 
+@@ -61,12 +63,12 @@ model Customer {
+ }
+ 
+ enum TransactionType {
+-  IN   // Entrada / Faturamento[cite: 12]
+-  OUT  // Saída / Despesa[cite: 12]
++  IN   // Entrada / Faturamento
++  OUT  // Saída / Despesa
+ }
+ 
+ /// @model Transaction
+-/// [SINGLE LEDGER] Centralização contábil de todas as movimentações financeiras[cite: 9].
++/// [SINGLE LEDGER] Centralização contábil de todas as movimentações financeiras.
+ model Transaction {
+   id          String          @id @default(uuid())
+   type        TransactionType // Define a natureza matemática da operação (IN ou OUT)
+@@ -74,15 +76,16 @@ model Transaction {
+   description String?
+   date        DateTime        // Data de competência da movimentação (Obrigatória)
+   category    String?         // Categoria da transação. Obrigatória via Service se type == OUT
++  isBusiness  Boolean         @default(false) // 🌟 Campo restaurado (Diferencia gastos pessoais e corporativos)
+   companyId   String          @map("company_id")
+   company     Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+-  customerId  String?         @map("customer_id") // Opcional, vincula receita a um cliente[cite: 10]
++  customerId  String?         @map("customer_id") // Opcional, vincula receita a um cliente
+   customer    Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+   createdAt   DateTime        @default(now()) @map("created_at")
+   updatedAt   DateTime        @updatedAt @map("updated_at")
+   deletedAt   DateTime?       @map("deleted_at") // Soft Delete obrigatório para fins fiscais e contábeis
+ 
+-  @@index([companyId]) // Garante o isolamento básico do tenant[cite: 9, 14]
++  @@index([companyId]) // Garante o isolamento básico do tenant
+   @@index([companyId, date, type]) // Índice composto de alta performance para renderizar o Dashboard instantaneamente
+   @@map("transactions")
+ }
+@@ -94,7 +97,7 @@ enum ProjectStatus {
+ }
+ 
+ /// @model Project
+-/// Projetos fechados pelo MEI para prestação de serviços[cite: 10].
++/// Projetos fechados pelo MEI para prestação de serviços.
+ model Project {
+   id         String        @id @default(uuid())
+   name       String
+@@ -113,15 +116,15 @@ model Project {
+ }
+ 
+ /// @model Insight
+-/// Registro dos relatórios de risco e sacadas geradas pelo motor de IA[cite: 10, 14].
++/// Registro dos relatórios de risco e sacadas geradas pelo motor de IA.
+ model Insight {
+   id        String   @id @default(uuid())
+-  type      String   // Categoria do insight (ex: 'alert', 'risk', 'tip')[cite: 14]
+-  message   String   // Texto amigável e direto escrito pela IA[cite: 14]
+-  context   Json     // Metadados flexíveis de apoio ao insight (ex: { diffPercentage: 15.5 })[cite: 14]
++  type      String   // Categoria do insight (ex: 'alert', 'risk', 'tip')
++  message   String   // Texto amigável e direto escrito pela IA
++  context   Json     // Metadados flexíveis de apoio ao insight (ex: { diffPercentage: 15.5 })
+   companyId String   @map("company_id")
+   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+-  createdAt DateTime @default(now()) @map("created_at")
++  createdAt DateTime @default(now())
+ 
+   @@index([companyId])
+   @@map("insights")
+diff --git a/fynora-backend/src/auth/auth.service.ts b/fynora-backend/src/auth/auth.service.ts
+index f1e336e..a723e71 100644
+--- a/fynora-backend/src/auth/auth.service.ts
++++ b/fynora-backend/src/auth/auth.service.ts
+@@ -19,7 +19,7 @@ export class AuthService {
+         id: true,
+         email: true,
+         password: true,
+-        company_id: true,
++        companyId: true,
+       },
+     });
+ 
+@@ -36,7 +36,7 @@ export class AuthService {
+     const payload: JwtPayload = {
+       sub: user.id,
+       email: user.email,
+-      companyId: user.company_id,
++      companyId: user.companyId,
+     };
+ 
+     const token = await this.jwtService.signAsync(payload);
+diff --git a/fynora-backend/src/company/company.repository.ts b/fynora-backend/src/company/company.repository.ts
+index 3e4c946..36cf135 100644
+--- a/fynora-backend/src/company/company.repository.ts
++++ b/fynora-backend/src/company/company.repository.ts
+@@ -6,7 +6,6 @@ import { CompanyEntity } from './entity/company.entity';
+ 
+ export type CreateCompanyData = {
+   name: string;
+-  document: string;
+ };
+ 
+ @Injectable()
+@@ -21,25 +20,12 @@ export class CompanyRepository {
+     const company = await client.company.create({
+       data: {
+         name: data.name,
+-        document: data.document,
+       },
+     });
+ 
+     return CompanyEntity.fromPrisma(company);
+   }
+ 
+-  async findByDocument(
+-    document: string,
+-    session?: TransactionSession,
+-  ): Promise<CompanyEntity | null> {
+-    const client = this.resolveClient(session);
+-    const company = await client.company.findUnique({
+-      where: { document },
+-    });
+-
+-    return company ? CompanyEntity.fromPrisma(company) : null;
+-  }
+-
+   private resolveClient(
+     session?: TransactionSession,
+   ): PrismaTransactionClient | PrismaService {
+diff --git a/fynora-backend/src/company/company.service.spec.ts b/fynora-backend/src/company/company.service.spec.ts
+index 606dcb4..3872391 100644
+--- a/fynora-backend/src/company/company.service.spec.ts
++++ b/fynora-backend/src/company/company.service.spec.ts
+@@ -1,6 +1,7 @@
+ import { ConflictException } from '@nestjs/common';
+ import { Prisma } from '@prisma/client';
+ import { Test, TestingModule } from '@nestjs/testing';
++import { PrismaService } from '../prisma/prisma.service';
+ import { PrismaTransactionManager } from '../prisma/prisma-transaction.manager';
+ import { UserRepository } from '../user/user.repository';
+ import { ONBOARDING_CONFLICT_MESSAGE } from './constants/onboarding.constants';
+@@ -19,7 +20,6 @@ describe('CompanyService', () => {
+ 
+   const companyRepositoryMock = {
+     create: jest.fn(),
+-    findByDocument: jest.fn(),
+   };
+ 
+   const userRepositoryMock = {
+@@ -27,13 +27,17 @@ describe('CompanyService', () => {
+     findByEmail: jest.fn(),
+   };
+ 
++  const prismaMock = {
++    company: {
++      findUnique: jest.fn(),
++    },
++  };
++
+   const onboardingDto: CompanyOnboardingDto = {
+     company: {
+       name: 'Empresa Teste',
+-      document: '11222333000181',
+     },
+     user: {
+-      name: 'Admin Teste',
+       email: 'admin@teste.com',
+       password: 'SenhaForte@2026',
+     },
+@@ -51,6 +55,7 @@ describe('CompanyService', () => {
+         },
+         { provide: CompanyRepository, useValue: companyRepositoryMock },
+         { provide: UserRepository, useValue: userRepositoryMock },
++        { provide: PrismaService, useValue: prismaMock },
+       ],
+     }).compile();
+ 
+@@ -65,17 +70,15 @@ describe('CompanyService', () => {
+     const company = new CompanyEntity({
+       id: 'company-1',
+       name: 'Empresa Teste',
+-      document: '11222333000181',
+       createdAt: new Date(),
+       updatedAt: new Date(),
+     });
+ 
+     const user = new UserEntity({
+       id: 'user-1',
+-      company_id: 'company-1',
++      companyId: 'company-1',
+       email: 'admin@teste.com',
+       password: 'hashed',
+-      name: 'Admin Teste',
+       createdAt: new Date(),
+       updatedAt: new Date(),
+     });
+@@ -83,7 +86,6 @@ describe('CompanyService', () => {
+     transactionManagerMock.runInTransaction.mockImplementation(
+       async (handler: (session: unknown) => Promise<unknown>) => handler({}),
+     );
+-    companyRepositoryMock.findByDocument.mockResolvedValue(null);
+     userRepositoryMock.findByEmail.mockResolvedValue(null);
+     companyRepositoryMock.create.mockResolvedValue(company);
+     userRepositoryMock.create.mockResolvedValue(user);
+@@ -94,20 +96,21 @@ describe('CompanyService', () => {
+     expect(result.user.email).toBe('admin@teste.com');
+     expect(transactionManagerMock.runInTransaction).toHaveBeenCalledTimes(1);
+     expect(companyRepositoryMock.create).toHaveBeenCalledWith(
+-      expect.objectContaining({ document: '11222333000181' }),
++      expect.objectContaining({ name: 'Empresa Teste' }),
+       expect.anything(),
+     );
+   });
+ 
+-  it('should reject duplicate document before transaction write', async () => {
++  it('should reject duplicate email before transaction write', async () => {
+     transactionManagerMock.runInTransaction.mockImplementation(
+       async (handler: (session: unknown) => Promise<unknown>) => handler({}),
+     );
+-    companyRepositoryMock.findByDocument.mockResolvedValue(
+-      new CompanyEntity({
++    userRepositoryMock.findByEmail.mockResolvedValue(
++      new UserEntity({
+         id: 'existing',
+-        name: 'Existente',
+-        document: '11222333000181',
++        companyId: 'company-1',
++        email: 'admin@teste.com',
++        password: 'hashed',
+         createdAt: new Date(),
+         updatedAt: new Date(),
+       }),
+@@ -118,13 +121,13 @@ describe('CompanyService', () => {
+     });
+   });
+ 
+-  it('should map Prisma P2002 on document to business conflict', async () => {
++  it('should map Prisma P2002 on email to business conflict', async () => {
+     const prismaError = new Prisma.PrismaClientKnownRequestError(
+       'Unique constraint failed',
+       {
+         code: 'P2002',
+         clientVersion: '7.8.0',
+-        meta: { target: ['document'] },
++        meta: { target: ['email'] },
+       },
+     );
+ 
+diff --git a/fynora-backend/src/company/company.service.ts b/fynora-backend/src/company/company.service.ts
+index 369fb77..a935241 100644
+--- a/fynora-backend/src/company/company.service.ts
++++ b/fynora-backend/src/company/company.service.ts
+@@ -6,7 +6,6 @@ import {
+ } from '@nestjs/common';
+ import * as bcrypt from 'bcrypt';
+ import { isPrismaUniqueConstraintOnFields } from '../common/utils/prisma-error.util';
+-import { stripDocument } from '../common/utils/document.util';
+ import { sanitizeText } from '../common/utils/sanitize-text.util';
+ import { PrismaService } from '../prisma/prisma.service';
+ import { PrismaTransactionManager } from '../prisma/prisma-transaction.manager';
+@@ -34,22 +33,11 @@ export class CompanyService {
+ 
+   async onboarding(dto: CompanyOnboardingDto): Promise<OnboardingResponseDto> {
+     const companyName = sanitizeText(dto.company.name);
+-    const document = stripDocument(dto.company.document);
+-    const userName = sanitizeText(dto.user.name);
+     const email = dto.user.email.trim().toLowerCase();
+ 
+     try {
+       const result = await this.transactionManager.runInTransaction(
+         async (session) => {
+-          const existingCompany = await this.companyRepository.findByDocument(
+-            document,
+-            session,
+-          );
+-
+-          if (existingCompany) {
+-            throw new ConflictException(ONBOARDING_CONFLICT_MESSAGE);
+-          }
+-
+           const existingUser = await this.userRepository.findByEmail(
+             email,
+             session,
+@@ -65,14 +53,13 @@ export class CompanyService {
+           );
+ 
+           const company = await this.companyRepository.create(
+-            { name: companyName, document },
++            { name: companyName },
+             session,
+           );
+ 
+           const user = await this.userRepository.create(
+             {
+-              company_id: company.id,
+-              name: userName,
++              companyId: company.id,
+               email,
+               password: passwordHash,
+             },
+@@ -93,7 +80,7 @@ export class CompanyService {
+         throw error;
+       }
+ 
+-      if (isPrismaUniqueConstraintOnFields(error, ['document', 'email'])) {
++      if (isPrismaUniqueConstraintOnFields(error, ['email'])) {
+         throw new ConflictException(ONBOARDING_CONFLICT_MESSAGE);
+       }
+ 
+diff --git a/fynora-backend/src/company/dto/company-response.dto.ts b/fynora-backend/src/company/dto/company-response.dto.ts
+index ebfd53c..723c458 100644
+--- a/fynora-backend/src/company/dto/company-response.dto.ts
++++ b/fynora-backend/src/company/dto/company-response.dto.ts
+@@ -8,9 +8,6 @@ export class CompanyResponseDto {
+   @ApiProperty()
+   name: string;
+ 
+-  @ApiProperty({ nullable: true, description: 'CPF/CNPJ somente dígitos' })
+-  document: string | null;
+-
+   @ApiProperty()
+   createdAt: Date;
+ 
+@@ -21,7 +18,6 @@ export class CompanyResponseDto {
+     return {
+       id: entity.id,
+       name: entity.name,
+-      document: entity.document,
+       createdAt: entity.createdAt,
+       updatedAt: entity.updatedAt,
+     };
+diff --git a/fynora-backend/src/company/dto/create-company.dto.ts b/fynora-backend/src/company/dto/create-company.dto.ts
+index 1c4df0c..de14ec8 100644
+--- a/fynora-backend/src/company/dto/create-company.dto.ts
++++ b/fynora-backend/src/company/dto/create-company.dto.ts
+@@ -1,8 +1,6 @@
+ import { ApiProperty } from '@nestjs/swagger';
+ import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+-import { IsCpfOrCnpj } from '../../common/decorators/is-cpf-or-cnpj.decorator';
+ import { SanitizeText } from '../../common/decorators/sanitize-text.decorator';
+-import { StripDocument } from '../../common/decorators/strip-document.decorator';
+ 
+ export class CreateCompanyDto {
+   @ApiProperty({ example: 'Minha Empresa MEI' })
+@@ -11,15 +9,4 @@ export class CreateCompanyDto {
+   @IsNotEmpty()
+   @MaxLength(255)
+   name: string;
+-
+-  @ApiProperty({
+-    example: '12345678000199',
+-    description:
+-      'CPF (11 dígitos) ou CNPJ (14 dígitos), apenas números após normalização',
+-  })
+-  @StripDocument()
+-  @IsCpfOrCnpj()
+-  @IsString()
+-  @IsNotEmpty()
+-  document: string;
+ }
+diff --git a/fynora-backend/src/company/dto/onboarding-user-response.dto.ts b/fynora-backend/src/company/dto/onboarding-user-response.dto.ts
+index b51d85e..34c8930 100644
+--- a/fynora-backend/src/company/dto/onboarding-user-response.dto.ts
++++ b/fynora-backend/src/company/dto/onboarding-user-response.dto.ts
+@@ -8,9 +8,6 @@ export class OnboardingUserResponseDto {
+   @ApiProperty({ format: 'uuid' })
+   company_id: string;
+ 
+-  @ApiProperty()
+-  name: string;
+-
+   @ApiProperty()
+   email: string;
+ 
+@@ -23,8 +20,7 @@ export class OnboardingUserResponseDto {
+   static fromEntity(entity: UserEntity): OnboardingUserResponseDto {
+     return {
+       id: entity.id,
+-      company_id: entity.company_id,
+-      name: entity.name,
++      company_id: entity.companyId,
+       email: entity.email,
+       createdAt: entity.createdAt,
+       updatedAt: entity.updatedAt,
+diff --git a/fynora-backend/src/company/dto/onboarding-user.dto.spec.ts b/fynora-backend/src/company/dto/onboarding-user.dto.spec.ts
+index e1a7882..5c80e09 100644
+--- a/fynora-backend/src/company/dto/onboarding-user.dto.spec.ts
++++ b/fynora-backend/src/company/dto/onboarding-user.dto.spec.ts
+@@ -5,7 +5,6 @@ import { OnboardingUserDto } from './onboarding-user.dto';
+ describe('OnboardingUserDto', () => {
+   it('should accept a strong password within 72 characters', async () => {
+     const dto = plainToInstance(OnboardingUserDto, {
+-      name: 'Admin',
+       email: 'admin@teste.com',
+       password: 'SenhaForte@2026',
+     });
+@@ -16,7 +15,6 @@ describe('OnboardingUserDto', () => {
+ 
+   it('should reject password longer than 72 characters', async () => {
+     const dto = plainToInstance(OnboardingUserDto, {
+-      name: 'Admin',
+       email: 'admin@teste.com',
+       password: `Aa1!${'x'.repeat(72)}`,
+     });
+@@ -27,7 +25,6 @@ describe('OnboardingUserDto', () => {
+ 
+   it('should reject password without special character', async () => {
+     const dto = plainToInstance(OnboardingUserDto, {
+-      name: 'Admin',
+       email: 'admin@teste.com',
+       password: 'SenhaForte123',
+     });
+diff --git a/fynora-backend/src/company/dto/onboarding-user.dto.ts b/fynora-backend/src/company/dto/onboarding-user.dto.ts
+index d031e49..e38e61f 100644
+--- a/fynora-backend/src/company/dto/onboarding-user.dto.ts
++++ b/fynora-backend/src/company/dto/onboarding-user.dto.ts
+@@ -8,7 +8,6 @@ import {
+   MaxLength,
+   MinLength,
+ } from 'class-validator';
+-import { SanitizeText } from '../../common/decorators/sanitize-text.decorator';
+ 
+ const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,72}$/;
+ 
+@@ -16,13 +15,6 @@ const PASSWORD_VALIDATION_MESSAGE =
+   'A senha deve conter no mínimo uma letra maiúscula, uma minúscula, um número e um caractere especial';
+ 
+ export class OnboardingUserDto {
+-  @ApiProperty({ example: 'João Silva' })
+-  @SanitizeText()
+-  @IsString()
+-  @IsNotEmpty()
+-  @MaxLength(255)
+-  name: string;
+-
+   @ApiProperty({ example: 'joao@empresa.com' })
+   @Transform(({ value }) =>
+     typeof value === 'string' ? value.trim().toLowerCase() : value,
+diff --git a/fynora-backend/src/company/entity/company.entity.ts b/fynora-backend/src/company/entity/company.entity.ts
+index 4d27761..d1da1b6 100644
+--- a/fynora-backend/src/company/entity/company.entity.ts
++++ b/fynora-backend/src/company/entity/company.entity.ts
+@@ -3,14 +3,12 @@ import type { Company as PrismaCompany } from '@prisma/client';
+ export class CompanyEntity {
+   readonly id: string;
+   readonly name: string;
+-  readonly document: string | null;
+   readonly createdAt: Date;
+   readonly updatedAt: Date;
+ 
+   constructor(data: PrismaCompany) {
+     this.id = data.id;
+     this.name = data.name;
+-    this.document = data.document;
+     this.createdAt = data.createdAt;
+     this.updatedAt = data.updatedAt;
+   }
+diff --git a/fynora-backend/src/transaction/dto/create-transaction.dto.ts b/fynora-backend/src/transaction/dto/create-transaction.dto.ts
+index 93373db..ebb4577 100644
+--- a/fynora-backend/src/transaction/dto/create-transaction.dto.ts
++++ b/fynora-backend/src/transaction/dto/create-transaction.dto.ts
+@@ -1,7 +1,6 @@
+ import {
+   IsString,
+   IsNumber,
+-  IsBoolean,
+   IsEnum,
+   IsOptional,
+   IsDateString,
+@@ -26,10 +25,6 @@ export class CreateTransactionDto {
+   @IsNotEmpty()
+   date: string;
+ 
+-  @IsBoolean()
+-  @IsOptional()
+-  isBusiness?: boolean = true;
+-
+   @IsString()
+   @IsOptional()
+   category?: string;
+diff --git a/fynora-backend/src/transaction/transaction.service.ts b/fynora-backend/src/transaction/transaction.service.ts
+index f07629d..3a420f9 100644
+--- a/fynora-backend/src/transaction/transaction.service.ts
++++ b/fynora-backend/src/transaction/transaction.service.ts
+@@ -1,7 +1,7 @@
+ import { Injectable, NotFoundException } from '@nestjs/common';
+-import { PrismaService } from '../prisma/prisma.service'; // Certifique-se de que o caminho para o seu PrismaService está correto
++import { Prisma, TransactionType } from '@prisma/client';
++import { PrismaService } from '../prisma/prisma.service';
+ import { CreateTransactionDto } from './dto/create-transaction.dto';
+-import { Prisma } from '@prisma/client';
+ 
+ @Injectable()
+ export class TransactionService {
+@@ -14,23 +14,22 @@ export class TransactionService {
+         amount: new Prisma.Decimal(createTransactionDto.amount),
+         type: createTransactionDto.type,
+         date: new Date(createTransactionDto.date),
+-        isBusiness: createTransactionDto.isBusiness,
+         category: createTransactionDto.category,
+-        company_id: companyId, // Isolamento de Tenant ativo
++        companyId,
+       },
+     });
+   }
+ 
+   async findAll(companyId: string) {
+     return this.prisma.transaction.findMany({
+-      where: { company_id: companyId },
++      where: { companyId },
+       orderBy: { date: 'desc' },
+     });
+   }
+ 
+   async remove(id: string, companyId: string) {
+     const transaction = await this.prisma.transaction.findFirst({
+-      where: { id, company_id: companyId },
++      where: { id, companyId },
+     });
+ 
+     if (!transaction) {
+@@ -43,10 +42,9 @@ export class TransactionService {
+   }
+ 
+   async getDashboardStats(companyId: string) {
+-    // Agregação performática nativa no PostgreSQL
+     const aggregations = await this.prisma.transaction.groupBy({
+-      by: ['type', 'isBusiness'],
+-      where: { company_id: companyId },
++      by: ['type'],
++      where: { companyId },
+       _sum: {
+         amount: true,
+       },
+@@ -54,47 +52,29 @@ export class TransactionService {
+ 
+     let totalInflow = new Prisma.Decimal(0);
+     let totalOutflow = new Prisma.Decimal(0);
+-    let businessInflow = new Prisma.Decimal(0);
+-    let businessOutflow = new Prisma.Decimal(0);
+-    let personalOutflow = new Prisma.Decimal(0);
+ 
+     for (const group of aggregations) {
+-      const sum = group._sum.amount || new Prisma.Decimal(0);
++      const sum = group._sum?.amount ?? new Prisma.Decimal(0);
+ 
+-      if (group.type === 'INFLOW') {
++      if (group.type === TransactionType.IN) {
+         totalInflow = totalInflow.add(sum);
+-        if (group.isBusiness) businessInflow = businessInflow.add(sum);
+-      } else if (group.type === 'OUTFLOW') {
++      } else if (group.type === TransactionType.OUT) {
+         totalOutflow = totalOutflow.add(sum);
+-        if (group.isBusiness) {
+-          businessOutflow = businessOutflow.add(sum);
+-        } else {
+-          personalOutflow = personalOutflow.add(sum);
+-        }
+       }
+     }
+ 
+-    // Aplicação das fórmulas financeiras do plano
+     const saldoTotal = totalInflow.minus(totalOutflow);
+-    const resultadoOperacional = businessInflow.minus(businessOutflow);
+-
+-    let indiceConfusaoPatrimonial = 0;
+-    if (totalOutflow.greaterThan(0)) {
+-      indiceConfusaoPatrimonial = personalOutflow
+-        .dividedBy(totalOutflow)
+-        .mul(100)
+-        .toNumber();
+-    }
++    const resultadoOperacional = saldoTotal;
+ 
+     return {
+       saldoTotal: saldoTotal.toNumber(),
+       resultadoOperacional: resultadoOperacional.toNumber(),
+-      indiceConfusaoPatrimonial: Number(indiceConfusaoPatrimonial.toFixed(2)),
++      indiceConfusaoPatrimonial: 0,
+       detalhes: {
+         totalInflow: totalInflow.toNumber(),
+         totalOutflow: totalOutflow.toNumber(),
+-        businessOutflow: businessOutflow.toNumber(),
+-        personalOutflow: personalOutflow.toNumber(),
++        businessOutflow: 0,
++        personalOutflow: 0,
+       },
+     };
+   }
+diff --git a/fynora-backend/src/user/dto/user-response.dto.ts b/fynora-backend/src/user/dto/user-response.dto.ts
+index bb9b444..051c454 100644
+--- a/fynora-backend/src/user/dto/user-response.dto.ts
++++ b/fynora-backend/src/user/dto/user-response.dto.ts
+@@ -5,9 +5,6 @@ export class UserResponseDto {
+   @ApiProperty({ format: 'uuid' })
+   id: string;
+ 
+-  @ApiProperty()
+-  name: string;
+-
+   @ApiProperty()
+   email: string;
+ 
+@@ -20,7 +17,6 @@ export class UserResponseDto {
+   static fromEntity(entity: UserEntity): UserResponseDto {
+     return {
+       id: entity.id,
+-      name: entity.name,
+       email: entity.email,
+       createdAt: entity.createdAt,
+       updatedAt: entity.updatedAt,
+diff --git a/fynora-backend/src/user/entity/user.entity.ts b/fynora-backend/src/user/entity/user.entity.ts
+index c99119c..5728f5b 100644
+--- a/fynora-backend/src/user/entity/user.entity.ts
++++ b/fynora-backend/src/user/entity/user.entity.ts
+@@ -2,17 +2,15 @@ import type { User as PrismaUser } from '@prisma/client';
+ 
+ export class UserEntity {
+   readonly id: string;
+-  readonly company_id: string;
++  readonly companyId: string;
+   readonly email: string;
+-  readonly name: string;
+   readonly createdAt: Date;
+   readonly updatedAt: Date;
+ 
+   constructor(data: PrismaUser) {
+     this.id = data.id;
+-    this.company_id = data.company_id;
++    this.companyId = data.companyId;
+     this.email = data.email;
+-    this.name = data.name;
+     this.createdAt = data.createdAt;
+     this.updatedAt = data.updatedAt;
+   }
+diff --git a/fynora-backend/src/user/user.repository.ts b/fynora-backend/src/user/user.repository.ts
+index 0e5a564..17b6d48 100644
+--- a/fynora-backend/src/user/user.repository.ts
++++ b/fynora-backend/src/user/user.repository.ts
+@@ -5,8 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
+ import { UserEntity } from './entity/user.entity';
+ 
+ export type CreateUserData = {
+-  company_id: string;
+-  name: string;
++  companyId: string;
+   email: string;
+   password: string;
+ };
+@@ -22,8 +21,7 @@ export class UserRepository {
+     const client = this.resolveClient(session);
+     const user = await client.user.create({
+       data: {
+-        company_id: data.company_id,
+-        name: data.name,
++        companyId: data.companyId,
+         email: data.email,
+         password: data.password,
+       },
+@@ -53,7 +51,7 @@ export class UserRepository {
+     const user = await client.user.findFirst({
+       where: {
+         id,
+-        company_id: companyId,
++        companyId,
+       },
+     });
+ 
+@@ -66,8 +64,8 @@ export class UserRepository {
+   ): Promise<UserEntity[]> {
+     const client = this.resolveClient(session);
+     const users = await client.user.findMany({
+-      where: { company_id: companyId },
+-      orderBy: { name: 'asc' },
++      where: { companyId },
++      orderBy: { email: 'asc' },
+     });
+ 
+     return users.map((user) => UserEntity.fromPrisma(user));
+diff --git a/fynora-backend/test/tenant-isolation.e2e-spec.ts b/fynora-backend/test/tenant-isolation.e2e-spec.ts
+index e58dd00..8f9d96a 100644
+--- a/fynora-backend/test/tenant-isolation.e2e-spec.ts
++++ b/fynora-backend/test/tenant-isolation.e2e-spec.ts
+@@ -11,10 +11,8 @@ const TEST_PASSWORD = 'SenhaForte@2026';
+ const TENANT_A = {
+   company: {
+     name: 'Empresa A E2E',
+-    document: '52998224725',
+   },
+   user: {
+-    name: 'Usuario A',
+     email: 'tenant-a-e2e@test.com',
+     password: TEST_PASSWORD,
+   },
+@@ -23,10 +21,8 @@ const TENANT_A = {
+ const TENANT_B = {
+   company: {
+     name: 'Empresa B E2E',
+-    document: '11222333000181',
+   },
+   user: {
+-    name: 'Usuario B',
+     email: 'tenant-b-e2e@test.com',
+     password: TEST_PASSWORD,
+   },
+@@ -123,7 +119,6 @@ describe('Tenant isolation (e2e)', () => {
+       expect(response.body).toMatchObject({
+         id: userAId,
+         email: TENANT_A.user.email,
+-        name: TENANT_A.user.name,
+       });
+       expect(response.body).not.toHaveProperty('password');
+     });

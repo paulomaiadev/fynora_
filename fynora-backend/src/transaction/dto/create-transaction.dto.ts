@@ -1,7 +1,6 @@
 import {
   IsString,
   IsNumber,
-  IsBoolean,
   IsEnum,
   IsOptional,
   IsDateString,
@@ -25,10 +24,6 @@ export class CreateTransactionDto {
   @IsDateString()
   @IsNotEmpty()
   date: string;
-
-  @IsBoolean()
-  @IsOptional()
-  isBusiness?: boolean = true;
 
   @IsString()
   @IsOptional()

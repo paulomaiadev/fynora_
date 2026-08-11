@@ -6,7 +6,6 @@ import { CompanyEntity } from './entity/company.entity';
 
 export type CreateCompanyData = {
   name: string;
-  document: string;
 };
 
 @Injectable()
@@ -21,23 +20,10 @@ export class CompanyRepository {
     const company = await client.company.create({
       data: {
         name: data.name,
-        document: data.document,
       },
     });
 
     return CompanyEntity.fromPrisma(company);
-  }
-
-  async findByDocument(
-    document: string,
-    session?: TransactionSession,
-  ): Promise<CompanyEntity | null> {
-    const client = this.resolveClient(session);
-    const company = await client.company.findUnique({
-      where: { document },
-    });
-
-    return company ? CompanyEntity.fromPrisma(company) : null;
   }
 
   private resolveClient(

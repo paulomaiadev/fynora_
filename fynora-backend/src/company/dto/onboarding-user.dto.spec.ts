@@ -5,7 +5,6 @@ import { OnboardingUserDto } from './onboarding-user.dto';
 describe('OnboardingUserDto', () => {
   it('should accept a strong password within 72 characters', async () => {
     const dto = plainToInstance(OnboardingUserDto, {
-      name: 'Admin',
       email: 'admin@teste.com',
       password: 'SenhaForte@2026',
     });
@@ -16,7 +15,6 @@ describe('OnboardingUserDto', () => {
 
   it('should reject password longer than 72 characters', async () => {
     const dto = plainToInstance(OnboardingUserDto, {
-      name: 'Admin',
       email: 'admin@teste.com',
       password: `Aa1!${'x'.repeat(72)}`,
     });
@@ -27,7 +25,6 @@ describe('OnboardingUserDto', () => {
 
   it('should reject password without special character', async () => {
     const dto = plainToInstance(OnboardingUserDto, {
-      name: 'Admin',
       email: 'admin@teste.com',
       password: 'SenhaForte123',
     });
